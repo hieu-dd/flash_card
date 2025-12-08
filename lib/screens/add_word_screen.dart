@@ -16,6 +16,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
   final _phoneticController = TextEditingController();
   final _meaningController = TextEditingController();
   final _exampleController = TextEditingController();
+  final _categoryController = TextEditingController();
 
   void _saveWord() {
     if (_formKey.currentState!.validate()) {
@@ -24,6 +25,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
         _phoneticController.text.trim(),
         _meaningController.text.trim(),
         _exampleController.text.trim(),
+        _categoryController.text.trim().isEmpty ? 'General' : _categoryController.text.trim(),
       );
       Navigator.pop(context);
     }
@@ -31,6 +33,9 @@ class _AddWordScreenState extends State<AddWordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<VocabularyProvider>(context, listen: false);
+    final existingCategories = provider.categories.toList();
+
     return Scaffold(
       appBar: AppBar(title: const Text('Add New Word')),
       body: Padding(
@@ -61,6 +66,12 @@ class _AddWordScreenState extends State<AddWordScreen> {
                 decoration: const InputDecoration(labelText: 'Example Sentence', border: OutlineInputBorder()),
                 maxLines: 2,
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _categoryController,
+                decoration: const InputDecoration(labelText: 'Category (Optional)', border: OutlineInputBorder()),
+              ),
+
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: _saveWord,

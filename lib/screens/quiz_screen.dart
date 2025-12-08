@@ -8,8 +8,9 @@ import '../providers/vocabulary_provider.dart';
 
 class QuizScreen extends StatefulWidget {
   final int wordCount;
+  final List<String>? categories;
 
-  const QuizScreen({super.key, required this.wordCount});
+  const QuizScreen({super.key, required this.wordCount, this.categories});
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -26,7 +27,7 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
-    _quizWords = Provider.of<VocabularyProvider>(context, listen: false).getQuizWords(widget.wordCount);
+    _quizWords = Provider.of<VocabularyProvider>(context, listen: false).getQuizWords(widget.wordCount, categories: widget.categories);
     _setupQuestion();
   }
 

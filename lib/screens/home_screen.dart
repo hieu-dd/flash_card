@@ -19,54 +19,101 @@ class HomeScreen extends StatelessWidget {
       return;
     }
 
+    final allCategories = provider.categories.toList();
+    allCategories.sort();
+
     showDialog(
       context: context,
       builder: (context) {
         int maxWords = min(20, provider.totalWords);
         int count = min(5, maxWords);
-        return AlertDialog(
-          title: const Text('Start Learning'),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('How many words? ($count)'),
-                  if (maxWords > 1)
-                    Slider(
-                      value: count.toDouble(),
-                      min: 1,
-                      max: maxWords.toDouble(),
-                      divisions: maxWords - 1,
-                      label: count.toString(),
-                      onChanged: (value) {
-                        setState(() {
-                          count = value.toInt();
-                        });
-                      },
+        List<String> selectedCategories = [];
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // Recalculate max words based on selected categories
+            int availableWordsCount = provider.totalWords;
+            if (selectedCategories.isNotEmpty) {
+              availableWordsCount = provider.words.where((w) => selectedCategories.contains(w.category)).length;
+            }
+            
+            // Adjust count if needed
+            int currentMax = min(20, availableWordsCount);
+            if (currentMax == 0) {
+               count = 0;
+            } else if (count > currentMax) {
+              count = currentMax;
+            } else if (count == 0 && currentMax > 0) {
+              count = min(5, currentMax);
+            }
+
+            return AlertDialog(
+              title: const Text('Start Learning'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Select Categories (Empty = All):', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8.0,
+                      children: allCategories.map((category) {
+                        return FilterChip(
+                          label: Text(category),
+                          selected: selectedCategories.contains(category),
+                          onSelected: (bool selected) {
+                            setState(() {
+                              if (selected) {
+                                selectedCategories.add(category);
+                              } else {
+                                selectedCategories.remove(category);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
                     ),
-                ],
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => QuizScreen(wordCount: count),
-                  ),
-                );
-              },
-              child: const Text('Start'),
-            ),
-          ],
+                    const SizedBox(height: 16),
+                    Text('How many words? ($count)'),
+                    if (currentMax > 1)
+                      Slider(
+                        value: count.toDouble(),
+                        min: 1,
+                        max: currentMax.toDouble(),
+                        divisions: currentMax - 1,
+                        label: count.toString(),
+                        onChanged: (value) {
+                          setState(() {
+                            count = value.toInt();
+                          });
+                        },
+                      )
+                    else if (currentMax == 0)
+                       const Text('No words available for selected categories.', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: count > 0 ? () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => QuizScreen(wordCount: count, categories: selectedCategories),
+                      ),
+                    );
+                  } : null,
+                  child: const Text('Start'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

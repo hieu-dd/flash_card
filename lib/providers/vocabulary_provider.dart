@@ -5,7 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/vocabulary.dart';
-import '../data/default_data.dart';
+import '../data/environment_data.dart';
 
 class VocabularyProvider extends ChangeNotifier {
   late Box<Vocabulary> _box;
@@ -20,6 +20,11 @@ class VocabularyProvider extends ChangeNotifier {
     return allWords;
   }
 
+  Set<String> get categories {
+    if (!_isInitialized) return {};
+    return _box.values.map((w) => w.category).toSet();
+  }
+
   int get totalWords => _isInitialized ? _box.length : 0;
 
   Future<void> init() async {
@@ -28,13 +33,14 @@ class VocabularyProvider extends ChangeNotifier {
     _box = await Hive.openBox<Vocabulary>('vocabularyBox');
     
     if (_box.isEmpty) {
-      for (var item in defaultVocabulary) {
+      for (var item in environmentVocabulary) {
         final newWord = Vocabulary(
           id: const Uuid().v4(),
           word: item['word']!,
           phonetic: item['phonetic']!,
           meaning: item['meaning']!,
           example: item['example']!,
+          category: item['category'] ?? 'General',
           lastReviewed: DateTime.now(),
         );
         await _box.put(newWord.id, newWord);
@@ -45,13 +51,14 @@ class VocabularyProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addWord(String word, String phonetic, String meaning, String example) async {
+  Future<void> addWord(String word, String phonetic, String meaning, String example, String category) async {
     final newWord = Vocabulary(
       id: const Uuid().v4(),
       word: word,
       phonetic: phonetic,
       meaning: meaning,
       example: example,
+      category: category,
       lastReviewed: DateTime.now(),
     );
     await _box.put(newWord.id, newWord);
@@ -59,17 +66,27 @@ class VocabularyProvider extends ChangeNotifier {
   }
 
   // Adaptive Weighted Random Selection
-  List<Vocabulary> getQuizWords(int count) {
+  List<Vocabulary> getQuizWords(int count, {List<String>? categories}) {
     if (words.isEmpty) return [];
     
+    var availableWords = List<Vocabulary>.from(words);
+    
+    if (categories != null && categories.isNotEmpty) {
+      availableWords = availableWords.where((w) => categories.contains(w.category)).toList();
+    }
+
+    if (availableWords.isEmpty) return [];
+
     final selectedWords = <Vocabulary>[];
-    final availableWords = List<Vocabulary>.from(words);
     final random = Random();
 
     count = min(count, availableWords.length);
 
     for (int i = 0; i < count; i++) {
       double totalWeight = availableWords.fold(0, (sum, item) => sum + item.weight);
+      // If totalWeight is 0 (shouldn't happen with min weight 1.0), avoid NaN
+      if (totalWeight == 0) totalWeight = 1;
+      
       double randomWeight = random.nextDouble() * totalWeight;
       
       double currentSum = 0;
