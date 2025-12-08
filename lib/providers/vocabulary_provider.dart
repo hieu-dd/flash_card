@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/vocabulary.dart';
 import '../data/environment_data.dart';
+import '../data/food_data.dart';
 
 class VocabularyProvider extends ChangeNotifier {
   late Box<Vocabulary> _box;
@@ -32,23 +33,43 @@ class VocabularyProvider extends ChangeNotifier {
     Hive.registerAdapter(VocabularyAdapter());
     _box = await Hive.openBox<Vocabulary>('vocabularyBox');
     
-    if (_box.isEmpty) {
-      for (var item in environmentVocabulary) {
-        final newWord = Vocabulary(
-          id: const Uuid().v4(),
-          word: item['word']!,
-          phonetic: item['phonetic']!,
-          meaning: item['meaning']!,
-          example: item['example']!,
-          category: item['category'] ?? 'General',
-          lastReviewed: DateTime.now(),
-        );
-        await _box.put(newWord.id, newWord);
-      }
-    }
+    await _seedDefaultData();
 
     _isInitialized = true;
     notifyListeners();
+  }
+
+  Future<void> _seedDefaultData() async {
+    final allDefaults = [...environmentVocabulary, ...foodVocabulary];
+
+    if (_box.isEmpty) {
+      for (var item in allDefaults) {
+        await _addVocabularyFromMap(item);
+      }
+    } else {
+      // Check for missing default words
+      final existingKeys = _box.values.map((v) => '${v.word}|${v.category}').toSet();
+      
+      for (var item in allDefaults) {
+        final key = '${item['word']}|${item['category'] ?? 'General'}';
+        if (!existingKeys.contains(key)) {
+          await _addVocabularyFromMap(item);
+        }
+      }
+    }
+  }
+
+  Future<void> _addVocabularyFromMap(Map<String, String> item) async {
+    final newWord = Vocabulary(
+      id: const Uuid().v4(),
+      word: item['word']!,
+      phonetic: item['phonetic']!,
+      meaning: item['meaning']!,
+      example: item['example']!,
+      category: item['category'] ?? 'General',
+      lastReviewed: DateTime.now(),
+    );
+    await _box.put(newWord.id, newWord);
   }
 
   Future<void> addWord(String word, String phonetic, String meaning, String example, String category) async {
