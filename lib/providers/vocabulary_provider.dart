@@ -5,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/vocabulary.dart';
+import '../data/default_data.dart';
 
 class VocabularyProvider extends ChangeNotifier {
   late Box<Vocabulary> _box;
@@ -25,6 +26,21 @@ class VocabularyProvider extends ChangeNotifier {
     await Hive.initFlutter();
     Hive.registerAdapter(VocabularyAdapter());
     _box = await Hive.openBox<Vocabulary>('vocabularyBox');
+    
+    if (_box.isEmpty) {
+      for (var item in defaultVocabulary) {
+        final newWord = Vocabulary(
+          id: const Uuid().v4(),
+          word: item['word']!,
+          phonetic: item['phonetic']!,
+          meaning: item['meaning']!,
+          example: item['example']!,
+          lastReviewed: DateTime.now(),
+        );
+        await _box.put(newWord.id, newWord);
+      }
+    }
+
     _isInitialized = true;
     notifyListeners();
   }
