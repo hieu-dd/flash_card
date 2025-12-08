@@ -22,7 +22,8 @@ class HomeScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) {
-        int count = 5;
+        int maxWords = min(20, provider.totalWords);
+        int count = min(5, maxWords);
         return AlertDialog(
           title: const Text('Start Learning'),
           content: StatefulBuilder(
@@ -31,18 +32,19 @@ class HomeScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text('How many words? ($count)'),
-                  Slider(
-                    value: count.toDouble(),
-                    min: 1,
-                    max: min(20, provider.totalWords.toDouble()),
-                    divisions: min(20, provider.totalWords) - 1,
-                    label: count.toString(),
-                    onChanged: (value) {
-                      setState(() {
-                        count = value.toInt();
-                      });
-                    },
-                  ),
+                  if (maxWords > 1)
+                    Slider(
+                      value: count.toDouble(),
+                      min: 1,
+                      max: maxWords.toDouble(),
+                      divisions: maxWords - 1,
+                      label: count.toString(),
+                      onChanged: (value) {
+                        setState(() {
+                          count = value.toInt();
+                        });
+                      },
+                    ),
                 ],
               );
             },
