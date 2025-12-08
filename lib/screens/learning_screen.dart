@@ -119,11 +119,12 @@ class _LearningScreenState extends State<LearningScreen> {
       appBar: AppBar(
         title: Text('Learning (${_currentIndex + 1}/${_learningWords.length})'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             Text(
               questionLabel,
               style: const TextStyle(color: Colors.grey, fontSize: 16),
@@ -188,7 +189,7 @@ class _LearningScreenState extends State<LearningScreen> {
               );
             }),
             if (_showResult) ...[
-              const Spacer(),
+              const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -230,7 +231,8 @@ class _LearningScreenState extends State<LearningScreen> {
                 ),
               ),
             ],
-          ],
+            ],
+          ),
         ),
       ),
     );
