@@ -6,11 +6,20 @@ import 'package:provider/provider.dart';
 import '../providers/vocabulary_provider.dart';
 import 'add_word_screen.dart';
 import 'quiz_screen.dart';
+import 'learning_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  void _startQuiz(BuildContext context) {
+    _showSetupDialog(context, isQuiz: true);
+  }
+
   void _startLearning(BuildContext context) {
+    _showSetupDialog(context, isQuiz: false);
+  }
+
+  void _showSetupDialog(BuildContext context, {required bool isQuiz}) {
     final provider = Provider.of<VocabularyProvider>(context, listen: false);
     if (provider.totalWords == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -28,6 +37,7 @@ class HomeScreen extends StatelessWidget {
         int maxWords = min(20, provider.totalWords);
         int count = min(5, maxWords);
         List<String> selectedCategories = [];
+        bool studyAll = false;
 
         return StatefulBuilder(
           builder: (context, setState) {
@@ -39,16 +49,21 @@ class HomeScreen extends StatelessWidget {
             
             // Adjust count if needed
             int currentMax = min(20, availableWordsCount);
-            if (currentMax == 0) {
-               count = 0;
-            } else if (count > currentMax) {
-              count = currentMax;
-            } else if (count == 0 && currentMax > 0) {
-              count = min(5, currentMax);
+            
+            if (studyAll) {
+              count = availableWordsCount;
+            } else {
+              if (currentMax == 0) {
+                 count = 0;
+              } else if (count > currentMax) {
+                count = currentMax;
+              } else if (count == 0 && currentMax > 0) {
+                count = min(5, currentMax);
+              }
             }
 
             return AlertDialog(
-              title: const Text('Start Learning'),
+              title: Text(isQuiz ? 'Start Quiz' : 'Start Learning'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -75,22 +90,43 @@ class HomeScreen extends StatelessWidget {
                       }).toList(),
                     ),
                     const SizedBox(height: 16),
-                    Text('How many words? ($count)'),
-                    if (currentMax > 1)
-                      Slider(
-                        value: count.toDouble(),
-                        min: 1,
-                        max: currentMax.toDouble(),
-                        divisions: currentMax - 1,
-                        label: count.toString(),
-                        onChanged: (value) {
-                          setState(() {
-                            count = value.toInt();
-                          });
-                        },
-                      )
-                    else if (currentMax == 0)
-                       const Text('No words available for selected categories.', style: TextStyle(color: Colors.red)),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: studyAll,
+                          onChanged: (value) {
+                            setState(() {
+                              studyAll = value ?? false;
+                              if (studyAll) {
+                                count = availableWordsCount;
+                              } else {
+                                count = min(5, currentMax);
+                              }
+                            });
+                          },
+                        ),
+                        const Text('Study All Words'),
+                      ],
+                    ),
+                    if (!studyAll) ...[
+                      Text('How many words? ($count)'),
+                      if (currentMax > 1)
+                        Slider(
+                          value: count.toDouble(),
+                          min: 1,
+                          max: currentMax.toDouble(),
+                          divisions: currentMax - 1,
+                          label: count.toString(),
+                          onChanged: (value) {
+                            setState(() {
+                              count = value.toInt();
+                            });
+                          },
+                        )
+                      else if (currentMax == 0)
+                         const Text('No words available for selected categories.', style: TextStyle(color: Colors.red)),
+                    ],
                   ],
                 ),
               ),
@@ -105,7 +141,9 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => QuizScreen(wordCount: count, categories: selectedCategories),
+                        builder: (_) => isQuiz 
+                            ? QuizScreen(wordCount: count, categories: selectedCategories)
+                            : LearningScreen(wordCount: count, categories: selectedCategories),
                       ),
                     );
                   } : null,
@@ -165,13 +203,29 @@ class HomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: SizedBox(
                     width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () => _startLearning(context),
-                      icon: const Icon(Icons.school),
-                      label: const Text('Start Learning'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.all(16),
-                      ),
+                    child: Column(
+                      children: [
+                        FilledButton.icon(
+                          onPressed: () => _startQuiz(context),
+                          icon: const Icon(Icons.quiz),
+                          label: const Text('Start Quiz'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.all(16),
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton.icon(
+                          onPressed: () => _startLearning(context),
+                          icon: const Icon(Icons.school),
+                          label: const Text('Start Learning'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.all(16),
+                            minimumSize: const Size(double.infinity, 50),
+                            backgroundColor: Colors.green,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
 
 import '../models/vocabulary.dart';
@@ -23,12 +24,25 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _isCorrect = false;
   final _answerController = TextEditingController();
   bool _isEnglishToVietnamese = true; // Randomly toggled
+  final FlutterTts _flutterTts = FlutterTts();
 
   @override
   void initState() {
     super.initState();
     _quizWords = Provider.of<VocabularyProvider>(context, listen: false).getQuizWords(widget.wordCount, categories: widget.categories);
     _setupQuestion();
+    _initTts();
+  }
+
+  Future<void> _initTts() async {
+    await _flutterTts.setLanguage("en-US");
+    await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
+  }
+
+  Future<void> _speak(String text) async {
+    await _flutterTts.speak(text);
   }
 
   void _setupQuestion() {
@@ -53,6 +67,7 @@ class _QuizScreenState extends State<QuizScreen> {
     });
 
     Provider.of<VocabularyProvider>(context, listen: false).updateWordStatus(currentWord, _isCorrect);
+    _speak(currentWord.word);
   }
 
   void _nextQuestion() {
@@ -68,6 +83,12 @@ class _QuizScreenState extends State<QuizScreen> {
         const SnackBar(content: Text('Session Complete! Great job!')),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _flutterTts.stop();
+    super.dispose();
   }
 
   @override
@@ -98,12 +119,17 @@ class _QuizScreenState extends State<QuizScreen> {
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
-            if (_isEnglishToVietnamese)
+            if (_isEnglishToVietnamese) ...[
               Text(
                 currentWord.phonetic,
                 style: const TextStyle(fontSize: 18, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
+              IconButton(
+                icon: const Icon(Icons.volume_up),
+                onPressed: () => _speak(currentWord.word),
+              ),
+            ],
             const SizedBox(height: 32),
             TextField(
               controller: _answerController,
@@ -136,7 +162,13 @@ class _QuizScreenState extends State<QuizScreen> {
                       const SizedBox(height: 8),
                       Text('Correct Answer: ${_isEnglishToVietnamese ? currentWord.meaning : currentWord.word}'),
                       const SizedBox(height: 8),
+                      Text(currentWord.phonetic, style: const TextStyle(color: Colors.grey)),
+                      const SizedBox(height: 8),
                       Text('Example: ${currentWord.example}', style: const TextStyle(fontStyle: FontStyle.italic)),
+                      IconButton(
+                        icon: const Icon(Icons.volume_up),
+                        onPressed: () => _speak(currentWord.word),
+                      ),
                     ],
                   ),
                 )

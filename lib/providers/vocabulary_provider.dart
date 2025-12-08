@@ -102,6 +102,24 @@ class VocabularyProvider extends ChangeNotifier {
     return selectedWords;
   }
 
+  // Get distractors for learning mode
+  List<Vocabulary> getLearningOptions(Vocabulary correctWord, int count) {
+    if (words.isEmpty) return [];
+
+    // Try to get words from same category first
+    var sameCategoryWords = words.where((w) => w.category == correctWord.category && w.id != correctWord.id).toList();
+    
+    // If not enough, fill with other words
+    if (sameCategoryWords.length < count) {
+      final otherWords = words.where((w) => w.category != correctWord.category && w.id != correctWord.id).toList();
+      otherWords.shuffle();
+      sameCategoryWords.addAll(otherWords.take(count - sameCategoryWords.length));
+    }
+
+    sameCategoryWords.shuffle();
+    return sameCategoryWords.take(count).toList();
+  }
+
   Future<void> updateWordStatus(Vocabulary word, bool isCorrect) async {
     if (isCorrect) {
       // Reduce weight, min 1.0
