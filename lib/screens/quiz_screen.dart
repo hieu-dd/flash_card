@@ -22,6 +22,7 @@ class _QuizScreenState extends State<QuizScreen> {
   int _currentIndex = 0;
   bool _showResult = false;
   bool _isCorrect = false;
+  bool _canProceed = false; // New state to control if user can go to next question
   final _answerController = TextEditingController();
   bool _isEnglishToVietnamese = true; // Randomly toggled
   final FlutterTts _flutterTts = FlutterTts();
@@ -47,8 +48,14 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void _setupQuestion() {
     _showResult = false;
+    _canProceed = false;
     _answerController.clear();
     _isEnglishToVietnamese = Random().nextBool();
+  }
+
+  String _getCorrectAnswer() {
+    final currentWord = _quizWords[_currentIndex];
+    return _isEnglishToVietnamese ? currentWord.meaning : currentWord.word;
   }
 
   void _checkAnswer() {
@@ -56,7 +63,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
     final currentWord = _quizWords[_currentIndex];
     final userAnswer = _answerController.text.trim().toLowerCase();
-    final correctAnswer = _isEnglishToVietnamese ? currentWord.meaning : currentWord.word;
+    final correctAnswer = _getCorrectAnswer();
     
     // Simple normalization for comparison
     final normalizedCorrect = correctAnswer.toLowerCase().trim();
@@ -64,10 +71,42 @@ class _QuizScreenState extends State<QuizScreen> {
     setState(() {
       _isCorrect = userAnswer == normalizedCorrect;
       _showResult = true;
+      _canProceed = _isCorrect; // Generally proceed if correct, unless we implement immediate retry logic (which we do if incorrect)
+      
+      // If incorrect, we don't proceed immediately. User must retry or mark as correct.
     });
 
     Provider.of<VocabularyProvider>(context, listen: false).updateWordStatus(currentWord, _isCorrect);
     _speak(currentWord.word);
+  }
+
+  void _checkRetry(String value) {
+    // Only called when answer was wrong and result is shown
+    final correctAnswer = _getCorrectAnswer();
+    final normalizedCorrect = correctAnswer.toLowerCase().trim();
+    final userRetry = value.trim().toLowerCase();
+
+    setState(() {
+      // Allow proceed if user types exactly the correct answer
+      _canProceed = userRetry == normalizedCorrect;
+    });
+  }
+
+  void _markAsCorrect() {
+    final currentWord = _quizWords[_currentIndex];
+    // User claims they were correct. Update provider to reflect success.
+    Provider.of<VocabularyProvider>(context, listen: false).updateWordStatus(currentWord, true);
+    
+    setState(() {
+      _isCorrect = true;
+      _canProceed = true;
+    });
+    
+    // Auto proceed or let user click next? 
+    // Requirement says "Next to next question", let's move automatically or just enable Next.
+    // "Option 1... next sang câu tiếp theo" implies action. 
+    // Let's just move to next question immediately for better UX if they click the button.
+    _nextQuestion();
   }
 
   void _nextQuestion() {
@@ -103,107 +142,139 @@ class _QuizScreenState extends State<QuizScreen> {
       appBar: AppBar(
         title: Text('Quiz (${_currentIndex + 1}/${_quizWords.length})'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              questionLabel,
-              style: const TextStyle(color: Colors.grey, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              questionText,
-              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            if (_isEnglishToVietnamese) ...[
-              Text(
-                currentWord.phonetic,
-                style: const TextStyle(fontSize: 18, color: Colors.grey),
-                textAlign: TextAlign.center,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
               ),
-              IconButton(
-                icon: const Icon(Icons.volume_up),
-                onPressed: () => _speak(currentWord.word),
-              ),
-            ],
-            const SizedBox(height: 32),
-            TextField(
-              controller: _answerController,
-              enabled: !_showResult,
-              decoration: InputDecoration(
-                labelText: 'Your Answer',
-                border: const OutlineInputBorder(),
-                suffixIcon: _showResult
-                    ? Icon(
-                        _isCorrect ? Icons.check_circle : Icons.cancel,
-                        color: _isCorrect ? Colors.green : Colors.red,
-                      )
-                    : null,
-              ),
-              onSubmitted: (_) => _checkAnswer(),
-            ),
-            const SizedBox(height: 24),
-            if (_showResult) ...[
-              if (!_isCorrect)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade200),
-                  ),
+              child: IntrinsicHeight(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text('Incorrect!', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      Text('Correct Answer: ${_isEnglishToVietnamese ? currentWord.meaning : currentWord.word}'),
-                      const SizedBox(height: 8),
-                      Text(currentWord.phonetic, style: const TextStyle(color: Colors.grey)),
-                      const SizedBox(height: 8),
-                      Text('Example: ${currentWord.example}', style: const TextStyle(fontStyle: FontStyle.italic)),
-                      IconButton(
-                        icon: const Icon(Icons.volume_up),
-                        onPressed: () => _speak(currentWord.word),
+                      Text(
+                        questionLabel,
+                        style: const TextStyle(color: Colors.grey, fontSize: 16),
+                        textAlign: TextAlign.center,
                       ),
+                      const SizedBox(height: 16),
+                      Text(
+                        questionText,
+                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (_isEnglishToVietnamese) ...[
+                        Text(
+                          currentWord.phonetic,
+                          style: const TextStyle(fontSize: 18, color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.volume_up),
+                          onPressed: () => _speak(currentWord.word),
+                        ),
+                      ],
+                      const SizedBox(height: 32),
+                      TextField(
+                        controller: _answerController,
+                        enabled: !_showResult || !_isCorrect, // Allow editing if incorrect to retry
+                        onChanged: (value) {
+                          if (_showResult && !_isCorrect) {
+                            _checkRetry(value);
+                          }
+                        },
+                        decoration: InputDecoration(
+                          labelText: 'Your Answer',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: _showResult
+                              ? Icon(
+                                  _isCorrect ? Icons.check_circle : Icons.cancel,
+                                  color: _isCorrect ? Colors.green : Colors.red,
+                                )
+                              : null,
+                        ),
+                        onSubmitted: (_) {
+                          if (!_showResult) {
+                            _checkAnswer();
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      if (_showResult) ...[
+                        if (!_isCorrect)
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: Column(
+                              children: [
+                                const Text('Incorrect!', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 8),
+                                Text('Correct Answer: ${_getCorrectAnswer()}'),
+                                const SizedBox(height: 8),
+                                Text(currentWord.phonetic, style: const TextStyle(color: Colors.grey)),
+                                const SizedBox(height: 8),
+                                Text('Example: ${currentWord.example}', style: const TextStyle(fontStyle: FontStyle.italic)),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.volume_up),
+                                      onPressed: () => _speak(currentWord.word),
+                                    ),
+                                    TextButton.icon(
+                                      onPressed: _markAsCorrect,
+                                      icon: const Icon(Icons.check),
+                                      label: const Text("I was correct"),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.green.shade200),
+                            ),
+                            child: const Center(
+                              child: Text('Correct! Well done.', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        const Spacer(),
+                        FilledButton(
+                          onPressed: _canProceed ? _nextQuestion : null,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text(_canProceed ? 'Next Word' : 'Type correct answer to continue'),
+                          ),
+                        ),
+                      ] else ...[
+                        const Spacer(),
+                        FilledButton(
+                          onPressed: _checkAnswer,
+                          child: const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text('Check Answer'),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.shade200),
-                  ),
-                  child: const Center(
-                    child: Text('Correct! Well done.', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              const Spacer(),
-              FilledButton(
-                onPressed: _nextQuestion,
-                child: const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text('Next Word'),
                 ),
               ),
-            ] else ...[
-              const Spacer(),
-              FilledButton(
-                onPressed: _checkAnswer,
-                child: const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text('Check Answer'),
-                ),
-              ),
-            ],
-          ],
-        ),
+            ),
+          );
+        },
       ),
     );
   }
