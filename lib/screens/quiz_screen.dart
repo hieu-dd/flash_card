@@ -58,22 +58,35 @@ class _QuizScreenState extends State<QuizScreen> {
     return _isEnglishToVietnamese ? currentWord.meaning : currentWord.word;
   }
 
+  String _removeDiacritics(String str) {
+    const withDiacritics = 'áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴĐ';
+    const withoutDiacritics = 'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyydAAAAAAAAAAAAAAAAAEEEEEEEEEEEIIIIIOOOOOOOOOOOOOOOOOUUUUUUUUUUUYYYYYD';
+    
+    for (int i = 0; i < withDiacritics.length; i++) {
+      str = str.replaceAll(withDiacritics[i], withoutDiacritics[i]);
+    }
+    return str;
+  }
+
+  String _normalizeAnswer(String input) {
+    final lower = input.toLowerCase().trim();
+    return _removeDiacritics(lower);
+  }
+
   void _checkAnswer() {
     if (_showResult) return;
 
     final currentWord = _quizWords[_currentIndex];
-    final userAnswer = _answerController.text.trim().toLowerCase();
+    final userAnswer = _answerController.text;
     final correctAnswer = _getCorrectAnswer();
     
-    // Simple normalization for comparison
-    final normalizedCorrect = correctAnswer.toLowerCase().trim();
+    final normalizedUser = _normalizeAnswer(userAnswer);
+    final normalizedCorrect = _normalizeAnswer(correctAnswer);
 
     setState(() {
-      _isCorrect = userAnswer == normalizedCorrect;
+      _isCorrect = normalizedUser == normalizedCorrect;
       _showResult = true;
-      _canProceed = _isCorrect; // Generally proceed if correct, unless we implement immediate retry logic (which we do if incorrect)
-      
-      // If incorrect, we don't proceed immediately. User must retry or mark as correct.
+      _canProceed = _isCorrect; 
     });
 
     Provider.of<VocabularyProvider>(context, listen: false).updateWordStatus(currentWord, _isCorrect);
@@ -83,12 +96,13 @@ class _QuizScreenState extends State<QuizScreen> {
   void _checkRetry(String value) {
     // Only called when answer was wrong and result is shown
     final correctAnswer = _getCorrectAnswer();
-    final normalizedCorrect = correctAnswer.toLowerCase().trim();
-    final userRetry = value.trim().toLowerCase();
+    
+    final normalizedCorrect = _normalizeAnswer(correctAnswer);
+    final normalizedRetry = _normalizeAnswer(value);
 
     setState(() {
-      // Allow proceed if user types exactly the correct answer
-      _canProceed = userRetry == normalizedCorrect;
+      // Allow proceed if user types exactly the correct answer (normalized)
+      _canProceed = normalizedRetry == normalizedCorrect;
     });
   }
 
