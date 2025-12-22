@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../models/vocabulary.dart';
 import '../data/environment_data.dart';
 import '../data/food_data.dart';
+import '../data/pet_data.dart';
 import '../data/travel_data.dart';
 import '../data/1000_common_data.dart';
 
@@ -19,7 +20,9 @@ class VocabularyProvider extends ChangeNotifier {
   List<Vocabulary> get words {
     if (!_isInitialized) return [];
     var allWords = _box.values.toList();
-    allWords.sort((a, b) => b.weight.compareTo(a.weight)); // Sort by weight descending
+    allWords.sort(
+      (a, b) => b.weight.compareTo(a.weight),
+    ); // Sort by weight descending
     return allWords;
   }
 
@@ -34,7 +37,7 @@ class VocabularyProvider extends ChangeNotifier {
     await Hive.initFlutter();
     Hive.registerAdapter(VocabularyAdapter());
     _box = await Hive.openBox<Vocabulary>('vocabularyBox');
-    
+
     await _seedDefaultData();
 
     _isInitialized = true;
@@ -42,7 +45,13 @@ class VocabularyProvider extends ChangeNotifier {
   }
 
   Future<void> _seedDefaultData() async {
-    final allDefaults = [...environmentVocabulary, ...foodVocabulary, ...travelVocabulary, ...commonVocabulary];
+    final allDefaults = [
+      ...environmentVocabulary,
+      ...foodVocabulary,
+      ...travelVocabulary,
+      ...petVocabulary,
+      ...commonVocabulary,
+    ];
 
     if (_box.isEmpty) {
       for (var item in allDefaults) {
@@ -50,8 +59,10 @@ class VocabularyProvider extends ChangeNotifier {
       }
     } else {
       // Check for missing default words
-      final existingKeys = _box.values.map((v) => '${v.word}|${v.category}').toSet();
-      
+      final existingKeys = _box.values
+          .map((v) => '${v.word}|${v.category}')
+          .toSet();
+
       for (var item in allDefaults) {
         final key = '${item['word']}|${item['category'] ?? 'General'}';
         if (!existingKeys.contains(key)) {
@@ -74,7 +85,13 @@ class VocabularyProvider extends ChangeNotifier {
     await _box.put(newWord.id, newWord);
   }
 
-  Future<void> addWord(String word, String phonetic, String meaning, String example, String category) async {
+  Future<void> addWord(
+    String word,
+    String phonetic,
+    String meaning,
+    String example,
+    String category,
+  ) async {
     final newWord = Vocabulary(
       id: const Uuid().v4(),
       word: word,
@@ -91,11 +108,13 @@ class VocabularyProvider extends ChangeNotifier {
   // Adaptive Weighted Random Selection
   List<Vocabulary> getQuizWords(int count, {List<String>? categories}) {
     if (words.isEmpty) return [];
-    
+
     var availableWords = List<Vocabulary>.from(words);
-    
+
     if (categories != null && categories.isNotEmpty) {
-      availableWords = availableWords.where((w) => categories.contains(w.category)).toList();
+      availableWords = availableWords
+          .where((w) => categories.contains(w.category))
+          .toList();
     }
 
     if (availableWords.isEmpty) return [];
@@ -106,12 +125,15 @@ class VocabularyProvider extends ChangeNotifier {
     count = min(count, availableWords.length);
 
     for (int i = 0; i < count; i++) {
-      double totalWeight = availableWords.fold(0, (sum, item) => sum + item.weight);
+      double totalWeight = availableWords.fold(
+        0,
+        (sum, item) => sum + item.weight,
+      );
       // If totalWeight is 0 (shouldn't happen with min weight 1.0), avoid NaN
       if (totalWeight == 0) totalWeight = 1;
-      
+
       double randomWeight = random.nextDouble() * totalWeight;
-      
+
       double currentSum = 0;
       for (var word in availableWords) {
         currentSum += word.weight;
@@ -130,13 +152,23 @@ class VocabularyProvider extends ChangeNotifier {
     if (words.isEmpty) return [];
 
     // Try to get words from same category first
-    var sameCategoryWords = words.where((w) => w.category == correctWord.category && w.id != correctWord.id).toList();
-    
+    var sameCategoryWords = words
+        .where(
+          (w) => w.category == correctWord.category && w.id != correctWord.id,
+        )
+        .toList();
+
     // If not enough, fill with other words
     if (sameCategoryWords.length < count) {
-      final otherWords = words.where((w) => w.category != correctWord.category && w.id != correctWord.id).toList();
+      final otherWords = words
+          .where(
+            (w) => w.category != correctWord.category && w.id != correctWord.id,
+          )
+          .toList();
       otherWords.shuffle();
-      sameCategoryWords.addAll(otherWords.take(count - sameCategoryWords.length));
+      sameCategoryWords.addAll(
+        otherWords.take(count - sameCategoryWords.length),
+      );
     }
 
     sameCategoryWords.shuffle();
