@@ -8,6 +8,7 @@ import '../models/vocabulary.dart';
 import '../data/environment_data.dart';
 import '../data/food_data.dart';
 import '../data/travel_data.dart';
+import '../data/1000_common_data.dart';
 
 class VocabularyProvider extends ChangeNotifier {
   late Box<Vocabulary> _box;
@@ -41,7 +42,7 @@ class VocabularyProvider extends ChangeNotifier {
   }
 
   Future<void> _seedDefaultData() async {
-    final allDefaults = [...environmentVocabulary, ...foodVocabulary, ...travelVocabulary];
+    final allDefaults = [...environmentVocabulary, ...foodVocabulary, ...travelVocabulary, ...commonVocabulary];
 
     if (_box.isEmpty) {
       for (var item in allDefaults) {
