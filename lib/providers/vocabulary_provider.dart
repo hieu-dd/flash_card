@@ -1,15 +1,37 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+import 'package:flash_cards/data/environment_data.dart';
+import 'package:flash_cards/data/food_data.dart';
+import 'package:flash_cards/data/pet_data.dart';
+import 'package:flash_cards/data/travel_data.dart';
+import 'package:flash_cards/data/common/a_common_data.dart';
+import 'package:flash_cards/data/common/b_common_data.dart';
+import 'package:flash_cards/data/common/c_common_data.dart';
+import 'package:flash_cards/data/common/d_common_data.dart';
+import 'package:flash_cards/data/common/e_common_data.dart';
+import 'package:flash_cards/data/common/f_common_data.dart';
+import 'package:flash_cards/data/common/g_common_data.dart';
+import 'package:flash_cards/data/common/h_common_data.dart';
+import 'package:flash_cards/data/common/i_common_data.dart';
+import 'package:flash_cards/data/common/j_common_data.dart';
+import 'package:flash_cards/data/common/k_common_data.dart';
+import 'package:flash_cards/data/common/l_common_data.dart';
+import 'package:flash_cards/data/common/m_common_data.dart';
+import 'package:flash_cards/data/common/n_common_data.dart';
+import 'package:flash_cards/data/common/o_common_data.dart';
+import 'package:flash_cards/data/common/p_common_data.dart';
+import 'package:flash_cards/data/common/q_common_data.dart';
+import 'package:flash_cards/data/common/r_common_data.dart';
+import 'package:flash_cards/data/common/s_common_data.dart';
+import 'package:flash_cards/data/common/t_common_data.dart';
+import 'package:flash_cards/data/common/u_common_data.dart';
+import 'package:flash_cards/data/common/v_common_data.dart';
+import 'package:flash_cards/data/common/w_common_data.dart';
+import 'package:flash_cards/data/common/y_common_data.dart';
+import 'package:flash_cards/models/vocabulary.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
-
-import '../models/vocabulary.dart';
-import '../data/environment_data.dart';
-import '../data/food_data.dart';
-import '../data/pet_data.dart';
-import '../data/travel_data.dart';
-import '../data/1000_common_data.dart';
 
 class VocabularyProvider extends ChangeNotifier {
   late Box<Vocabulary> _box;
@@ -50,7 +72,30 @@ class VocabularyProvider extends ChangeNotifier {
       ...foodVocabulary,
       ...travelVocabulary,
       ...petVocabulary,
-      ...commonVocabulary,
+      ...aCommonVocabulary,
+      ...bCommonVocabulary,
+      ...cCommonVocabulary,
+      ...dCommonVocabulary,
+      ...eCommonVocabulary,
+      ...fCommonVocabulary,
+      ...gCommonVocabulary,
+      ...hCommonVocabulary,
+      ...iCommonVocabulary,
+      ...jCommonVocabulary,
+      ...kCommonVocabulary,
+      ...lCommonVocabulary,
+      ...mCommonVocabulary,
+      ...nCommonVocabulary,
+      ...oCommonVocabulary,
+      ...pCommonVocabulary,
+      ...qCommonVocabulary,
+      ...rCommonVocabulary,
+      ...sCommonVocabulary,
+      ...tCommonVocabulary,
+      ...uCommonVocabulary,
+      ...vCommonVocabulary,
+      ...wCommonVocabulary,
+      ...yCommonVocabulary,
     ];
 
     if (_box.isEmpty) {

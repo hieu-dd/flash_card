@@ -1,0 +1,58 @@
+List<Map<String, String>> yCommonVocabulary = [
+  {
+    'word': 'yard',
+    'phonetic': '/jɑːd/',
+    'meaning': 'sân; thước Anh',
+    'example': 'Play in the yard.',
+    'category': 'Y_common',
+  },
+  {
+    'word': 'year',
+    'phonetic': '/jɪər/',
+    'meaning': 'năm',
+    'example': 'Happy New Year.',
+    'category': 'Y_common',
+  },
+  {
+    'word': 'yellow',
+    'phonetic': '/ˈjel.əʊ/',
+    'meaning': 'màu vàng',
+    'example': 'Yellow sun.',
+    'category': 'Y_common',
+  },
+  {
+    'word': 'yes',
+    'phonetic': '/jes/',
+    'meaning': 'vâng, có',
+    'example': 'Yes, please.',
+    'category': 'Y_common',
+  },
+  {
+    'word': 'yet',
+    'phonetic': '/jet/',
+    'meaning': 'chưa',
+    'example': 'Not yet.',
+    'category': 'Y_common',
+  },
+  {
+    'word': 'you',
+    'phonetic': '/juː/',
+    'meaning': 'bạn',
+    'example': 'I love you.',
+    'category': 'Y_common',
+  },
+  {
+    'word': 'young',
+    'phonetic': '/jʌŋ/',
+    'meaning': 'trẻ',
+    'example': 'When I was young.',
+    'category': 'Y_common',
+  },
+  {
+    'word': 'your',
+    'phonetic': '/jɔːr/',
+    'meaning': 'của bạn',
+    'example': 'Your book.',
+    'category': 'Y_common',
+  },
+];

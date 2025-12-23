@@ -1,0 +1,58 @@
+List<Map<String, String>> kCommonVocabulary = [
+  {
+    'word': 'keep',
+    'phonetic': '/kiːp/',
+    'meaning': 'giữ',
+    'example': 'Keep the change.',
+    'category': 'K_common',
+  },
+  {
+    'word': 'kept',
+    'phonetic': '/kept/',
+    'meaning': 'đã giữ',
+    'example': 'He kept his promise.',
+    'category': 'K_common',
+  },
+  {
+    'word': 'key',
+    'phonetic': '/kiː/',
+    'meaning': 'chìa khóa',
+    'example': 'I lost my house key.',
+    'category': 'K_common',
+  },
+  {
+    'word': 'kill',
+    'phonetic': '/kɪl/',
+    'meaning': 'giết',
+    'example': 'Smoking kills.',
+    'category': 'K_common',
+  },
+  {
+    'word': 'kind',
+    'phonetic': '/kaɪnd/',
+    'meaning': 'tốt bụng; loại',
+    'example': 'It is very kind of you.',
+    'category': 'K_common',
+  },
+  {
+    'word': 'king',
+    'phonetic': '/kɪŋ/',
+    'meaning': 'vua',
+    'example': 'The lion is the king of the jungle.',
+    'category': 'K_common',
+  },
+  {
+    'word': 'knew',
+    'phonetic': '/njuː/',
+    'meaning': 'đã biết',
+    'example': 'I knew the answer.',
+    'category': 'K_common',
+  },
+  {
+    'word': 'know',
+    'phonetic': '/nəʊ/',
+    'meaning': 'biết',
+    'example': 'I know him well.',
+    'category': 'K_common',
+  },
+];
