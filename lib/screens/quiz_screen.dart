@@ -22,7 +22,8 @@ class _QuizScreenState extends State<QuizScreen> {
   int _currentIndex = 0;
   bool _showResult = false;
   bool _isCorrect = false;
-  bool _canProceed = false; // New state to control if user can go to next question
+  bool _canProceed =
+      false; // New state to control if user can go to next question
   final _answerController = TextEditingController();
   bool _isEnglishToVietnamese = true; // Randomly toggled
   final FlutterTts _flutterTts = FlutterTts();
@@ -30,7 +31,10 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
-    _quizWords = Provider.of<VocabularyProvider>(context, listen: false).getQuizWords(widget.wordCount, categories: widget.categories);
+    _quizWords = Provider.of<VocabularyProvider>(
+      context,
+      listen: false,
+    ).getQuizWords(widget.wordCount, categories: widget.categories);
     _setupQuestion();
     _initTts();
   }
@@ -59,9 +63,11 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   String _removeDiacritics(String str) {
-    const withDiacritics = 'áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴĐ';
-    const withoutDiacritics = 'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyydAAAAAAAAAAAAAAAAAEEEEEEEEEEEIIIIIOOOOOOOOOOOOOOOOOUUUUUUUUUUUYYYYYD';
-    
+    const withDiacritics =
+        'áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴĐ';
+    const withoutDiacritics =
+        'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyydAAAAAAAAAAAAAAAAAEEEEEEEEEEEIIIIIOOOOOOOOOOOOOOOOOUUUUUUUUUUUYYYYYD';
+
     for (int i = 0; i < withDiacritics.length; i++) {
       str = str.replaceAll(withDiacritics[i], withoutDiacritics[i]);
     }
@@ -69,7 +75,17 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   String _normalizeAnswer(String input) {
-    final lower = input.toLowerCase().trim();
+    final lower = input
+        .toLowerCase()
+        .replaceAll(" ", "")
+        .replaceAll(",", "")
+        .replaceAll(".", "")
+        .replaceAll("!", "")
+        .replaceAll("?", "")
+        .replaceAll(";", "")
+        .replaceAll(":", "")
+        .replaceAll("\n", "")
+        .trim();
     return _removeDiacritics(lower);
   }
 
@@ -79,24 +95,27 @@ class _QuizScreenState extends State<QuizScreen> {
     final currentWord = _quizWords[_currentIndex];
     final userAnswer = _answerController.text;
     final correctAnswer = _getCorrectAnswer();
-    
+
     final normalizedUser = _normalizeAnswer(userAnswer);
     final normalizedCorrect = _normalizeAnswer(correctAnswer);
 
     setState(() {
       _isCorrect = normalizedUser == normalizedCorrect;
       _showResult = true;
-      _canProceed = _isCorrect; 
+      _canProceed = _isCorrect;
     });
 
-    Provider.of<VocabularyProvider>(context, listen: false).updateWordStatus(currentWord, _isCorrect);
+    Provider.of<VocabularyProvider>(
+      context,
+      listen: false,
+    ).updateWordStatus(currentWord, _isCorrect);
     _speak(currentWord.word);
   }
 
   void _checkRetry(String value) {
     // Only called when answer was wrong and result is shown
     final correctAnswer = _getCorrectAnswer();
-    
+
     final normalizedCorrect = _normalizeAnswer(correctAnswer);
     final normalizedRetry = _normalizeAnswer(value);
 
@@ -109,16 +128,19 @@ class _QuizScreenState extends State<QuizScreen> {
   void _markAsCorrect() {
     final currentWord = _quizWords[_currentIndex];
     // User claims they were correct. Update provider to reflect success.
-    Provider.of<VocabularyProvider>(context, listen: false).updateWordStatus(currentWord, true);
-    
+    Provider.of<VocabularyProvider>(
+      context,
+      listen: false,
+    ).updateWordStatus(currentWord, true);
+
     setState(() {
       _isCorrect = true;
       _canProceed = true;
     });
-    
-    // Auto proceed or let user click next? 
+
+    // Auto proceed or let user click next?
     // Requirement says "Next to next question", let's move automatically or just enable Next.
-    // "Option 1... next sang câu tiếp theo" implies action. 
+    // "Option 1... next sang câu tiếp theo" implies action.
     // Let's just move to next question immediately for better UX if they click the button.
     _nextQuestion();
   }
@@ -146,11 +168,16 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_quizWords.isEmpty) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_quizWords.isEmpty)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     final currentWord = _quizWords[_currentIndex];
-    final questionText = _isEnglishToVietnamese ? currentWord.word : currentWord.meaning;
-    final questionLabel = _isEnglishToVietnamese ? 'Translate to Vietnamese' : 'Translate to English';
+    final questionText = _isEnglishToVietnamese
+        ? currentWord.word
+        : currentWord.meaning;
+    final questionLabel = _isEnglishToVietnamese
+        ? 'Translate to Vietnamese'
+        : 'Translate to English';
 
     return Scaffold(
       appBar: AppBar(
@@ -160,9 +187,7 @@ class _QuizScreenState extends State<QuizScreen> {
         builder: (context, constraints) {
           return SingleChildScrollView(
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight,
-              ),
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: IntrinsicHeight(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -171,19 +196,28 @@ class _QuizScreenState extends State<QuizScreen> {
                     children: [
                       Text(
                         questionLabel,
-                        style: const TextStyle(color: Colors.grey, fontSize: 16),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         questionText,
-                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       if (_isEnglishToVietnamese) ...[
                         Text(
                           currentWord.phonetic,
-                          style: const TextStyle(fontSize: 18, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         IconButton(
@@ -194,7 +228,9 @@ class _QuizScreenState extends State<QuizScreen> {
                       const SizedBox(height: 32),
                       TextField(
                         controller: _answerController,
-                        enabled: !_showResult || !_isCorrect, // Allow editing if incorrect to retry
+                        enabled:
+                            !_showResult ||
+                            !_isCorrect, // Allow editing if incorrect to retry
                         onChanged: (value) {
                           if (_showResult && !_isCorrect) {
                             _checkRetry(value);
@@ -205,7 +241,9 @@ class _QuizScreenState extends State<QuizScreen> {
                           border: const OutlineInputBorder(),
                           suffixIcon: _showResult
                               ? Icon(
-                                  _isCorrect ? Icons.check_circle : Icons.cancel,
+                                  _isCorrect
+                                      ? Icons.check_circle
+                                      : Icons.cancel,
                                   color: _isCorrect ? Colors.green : Colors.red,
                                 )
                               : null,
@@ -228,13 +266,27 @@ class _QuizScreenState extends State<QuizScreen> {
                             ),
                             child: Column(
                               children: [
-                                const Text('Incorrect!', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                const Text(
+                                  'Incorrect!',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                                 const SizedBox(height: 8),
                                 Text('Correct Answer: ${_getCorrectAnswer()}'),
                                 const SizedBox(height: 8),
-                                Text(currentWord.phonetic, style: const TextStyle(color: Colors.grey)),
+                                Text(
+                                  currentWord.phonetic,
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
                                 const SizedBox(height: 8),
-                                Text('Example: ${currentWord.example}', style: const TextStyle(fontStyle: FontStyle.italic)),
+                                Text(
+                                  'Example: ${currentWord.example}',
+                                  style: const TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -261,7 +313,13 @@ class _QuizScreenState extends State<QuizScreen> {
                               border: Border.all(color: Colors.green.shade200),
                             ),
                             child: const Center(
-                              child: Text('Correct! Well done.', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                              child: Text(
+                                'Correct! Well done.',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
                         const Spacer(),
@@ -269,7 +327,11 @@ class _QuizScreenState extends State<QuizScreen> {
                           onPressed: _canProceed ? _nextQuestion : null,
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
-                            child: Text(_canProceed ? 'Next Word' : 'Type correct answer to continue'),
+                            child: Text(
+                              _canProceed
+                                  ? 'Next Word'
+                                  : 'Type correct answer to continue',
+                            ),
                           ),
                         ),
                       ] else ...[
