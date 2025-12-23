@@ -7,11 +7,19 @@ import 'package:provider/provider.dart';
 import '../models/vocabulary.dart';
 import '../providers/vocabulary_provider.dart';
 
+enum QuizAnswerTarget { english, vietnamese, random }
+
 class QuizScreen extends StatefulWidget {
   final int wordCount;
   final List<String>? categories;
+  final QuizAnswerTarget answerTarget;
 
-  const QuizScreen({super.key, required this.wordCount, this.categories});
+  const QuizScreen({
+    super.key,
+    required this.wordCount,
+    this.categories,
+    this.answerTarget = QuizAnswerTarget.random,
+  });
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -54,7 +62,18 @@ class _QuizScreenState extends State<QuizScreen> {
     _showResult = false;
     _canProceed = false;
     _answerController.clear();
-    _isEnglishToVietnamese = Random().nextBool();
+
+    switch (widget.answerTarget) {
+      case QuizAnswerTarget.english:
+        _isEnglishToVietnamese = false; // Question VN -> Answer EN
+        break;
+      case QuizAnswerTarget.vietnamese:
+        _isEnglishToVietnamese = true; // Question EN -> Answer VN
+        break;
+      case QuizAnswerTarget.random:
+        _isEnglishToVietnamese = Random().nextBool();
+        break;
+    }
   }
 
   String _getCorrectAnswer() {
@@ -168,8 +187,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_quizWords.isEmpty)
+    if (_quizWords.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final currentWord = _quizWords[_currentIndex];
     final questionText = _isEnglishToVietnamese

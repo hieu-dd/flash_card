@@ -22,9 +22,9 @@ class HomeScreen extends StatelessWidget {
   void _showSetupDialog(BuildContext context, {required bool isQuiz}) {
     final provider = Provider.of<VocabularyProvider>(context, listen: false);
     if (provider.totalWords == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add some words first!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Add some words first!')));
       return;
     }
 
@@ -35,30 +35,33 @@ class HomeScreen extends StatelessWidget {
       context: context,
       builder: (context) {
         int maxWords = min(20, provider.totalWords);
-        int count = min(5, maxWords);
+        int count = min(20, maxWords);
         List<String> selectedCategories = [];
         bool studyAll = false;
+        QuizAnswerTarget selectedAnswerTarget = QuizAnswerTarget.random;
 
         return StatefulBuilder(
           builder: (context, setState) {
             // Recalculate max words based on selected categories
             int availableWordsCount = provider.totalWords;
             if (selectedCategories.isNotEmpty) {
-              availableWordsCount = provider.words.where((w) => selectedCategories.contains(w.category)).length;
+              availableWordsCount = provider.words
+                  .where((w) => selectedCategories.contains(w.category))
+                  .length;
             }
-            
+
             // Adjust count if needed
             int currentMax = min(20, availableWordsCount);
-            
+
             if (studyAll) {
               count = availableWordsCount;
             } else {
               if (currentMax == 0) {
-                 count = 0;
+                count = 0;
               } else if (count > currentMax) {
                 count = currentMax;
               } else if (count == 0 && currentMax > 0) {
-                count = min(5, currentMax);
+                count = min(20, currentMax);
               }
             }
 
@@ -69,28 +72,6 @@ class HomeScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Select Categories (Empty = All):', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8.0,
-                      children: allCategories.map((category) {
-                        return FilterChip(
-                          label: Text(category),
-                          selected: selectedCategories.contains(category),
-                          onSelected: (bool selected) {
-                            setState(() {
-                              if (selected) {
-                                selectedCategories.add(category);
-                              } else {
-                                selectedCategories.remove(category);
-                              }
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Checkbox(
@@ -101,7 +82,7 @@ class HomeScreen extends StatelessWidget {
                               if (studyAll) {
                                 count = availableWordsCount;
                               } else {
-                                count = min(5, currentMax);
+                                count = min(20, currentMax);
                               }
                             });
                           },
@@ -125,7 +106,71 @@ class HomeScreen extends StatelessWidget {
                           },
                         )
                       else if (currentMax == 0)
-                         const Text('No words available for selected categories.', style: TextStyle(color: Colors.red)),
+                        const Text(
+                          'No words available for selected categories.',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                    ],
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Select Categories (Empty = All):',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8.0,
+                      children: allCategories.map((category) {
+                        return FilterChip(
+                          label: Text(category),
+                          selected: selectedCategories.contains(category),
+                          onSelected: (bool selected) {
+                            setState(() {
+                              if (selected) {
+                                selectedCategories.add(category);
+                              } else {
+                                selectedCategories.remove(category);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    if (isQuiz) ...[
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Target Answer Language:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Column(
+                        children: [
+                          RadioListTile<QuizAnswerTarget>(
+                            title: const Text('Random (Mix)'),
+                            value: QuizAnswerTarget.random,
+                            groupValue: selectedAnswerTarget,
+                            onChanged: (val) =>
+                                setState(() => selectedAnswerTarget = val!),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          RadioListTile<QuizAnswerTarget>(
+                            title: const Text('English'),
+                            subtitle: const Text('Question: VN -> Answer: EN'),
+                            value: QuizAnswerTarget.english,
+                            groupValue: selectedAnswerTarget,
+                            onChanged: (val) =>
+                                setState(() => selectedAnswerTarget = val!),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          RadioListTile<QuizAnswerTarget>(
+                            title: const Text('Vietnamese'),
+                            subtitle: const Text('Question: EN -> Answer: VN'),
+                            value: QuizAnswerTarget.vietnamese,
+                            groupValue: selectedAnswerTarget,
+                            onChanged: (val) =>
+                                setState(() => selectedAnswerTarget = val!),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
                     ],
                   ],
                 ),
@@ -136,17 +181,26 @@ class HomeScreen extends StatelessWidget {
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
-                  onPressed: count > 0 ? () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => isQuiz 
-                            ? QuizScreen(wordCount: count, categories: selectedCategories)
-                            : LearningScreen(wordCount: count, categories: selectedCategories),
-                      ),
-                    );
-                  } : null,
+                  onPressed: count > 0
+                      ? () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => isQuiz
+                                  ? QuizScreen(
+                                      wordCount: count,
+                                      categories: selectedCategories,
+                                      answerTarget: selectedAnswerTarget,
+                                    )
+                                  : LearningScreen(
+                                      wordCount: count,
+                                      categories: selectedCategories,
+                                    ),
+                            ),
+                          );
+                        }
+                      : null,
                   child: const Text('Start'),
                 ),
               ],
@@ -192,8 +246,14 @@ class HomeScreen extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatItem('Total Words', '${provider.totalWords}'),
-                          _buildStatItem('To Review', '${provider.words.where((w) => w.weight > 50).length}'),
+                          _buildStatItem(
+                            'Total Words',
+                            '${provider.totalWords}',
+                          ),
+                          _buildStatItem(
+                            'To Review',
+                            '${provider.words.where((w) => w.weight > 50).length}',
+                          ),
                         ],
                       ),
                     ),
@@ -236,17 +296,26 @@ class HomeScreen extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final word = provider.words[index];
                       return ListTile(
-                        title: Text(word.word, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text(
+                          word.word,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         subtitle: Text('${word.phonetic} • ${word.meaning}'),
                         trailing: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: _getWeightColor(word.weight),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             'W: ${word.weight.toStringAsFixed(1)}',
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       );
@@ -276,7 +345,10 @@ class HomeScreen extends StatelessWidget {
   Widget _buildStatItem(String label, String value) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
         Text(label, style: const TextStyle(color: Colors.grey)),
       ],
     );
